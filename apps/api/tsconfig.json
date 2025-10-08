@@ -1,0 +1,10 @@
+{
+    "extends": "@shared/tsconfig",
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "dist",
+        "types": ["express", "cors", "cookie-parser"]
+    },
+    "include": ["src"],
+    "exclude": ["node_modules", "dist"]
+}
