@@ -3,12 +3,12 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "NODE_ENV=development tsc",
+        "build": "tsc",
         "check-types": "tsc --noEmit",
-        "dev": "NODE_ENV=development tsx watch ./src/server.ts",
+        "dev": "tsx watch ./src/server.ts",
         "lint": "eslint src --ext .ts",
-        "start": "NODE_ENV=production node ./dist/server.js",
-        "start:dev": "NODE_ENV=development node ./dist/server.js"
+        "start": "node ./dist/server.js",
+        "start:dev": "node ./dist/server.js"
     },
     "dependencies": {
         "cookie-parser": "^1.4.7",
@@ -18,6 +18,7 @@
         "pino": "^10.0.0"
     },
     "devDependencies": {
+        "@shared/db": "workspace:^",
         "@shared/eslint-config": "workspace:^",
         "@shared/tsconfig": "workspace:^",
         "@types/cookie-parser": "^1.4.9",

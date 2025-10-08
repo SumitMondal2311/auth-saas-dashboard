@@ -4,24 +4,35 @@
     "scripts": {
         "build": "turbo build",
         "build:apps": "turbo build -F api",
+        "build:db": "turbo build -F @shared/db",
         "check-types": "turbo check-types",
         "clean": "rimraf **/*/dist",
-        "dev": "turbo dev",
+        "db:deploy": "dotenv -e apps/api/.env.production -- pnpm -F @shared/db db:deploy  ",
+        "db:generate": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:generate ",
+        "db:migrate": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:migrate  ",
+        "db:push": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:push  ",
+        "db:reset": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:reset  ",
+        "db:studio": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:studio ",
+        "dev": "NODE_ENV=development turbo dev",
+        "docker:down": "docker-compose down",
+        "docker:up": "docker-compose up",
         "format": "prettier --write **/*.{json,js,mjs,ts,jsx,tsx}",
         "lint": "turbo lint",
         "prepare": "husky",
-        "start": "turbo start",
-        "start:dev": "turbo start:dev"
+        "start": "NODE_ENV=production turbo start",
+        "start:dev": "NODE_ENV=development turbo start:dev"
     },
     "lint-staged": {
         "**/*.{json,js,mjs,ts,jsx,tsx}": "prettier --write"
     },
     "dependencies": {
+        "cross-env": "^10.1.0",
         "dotenv": "^17.2.3",
         "zod": "^4.1.12"
     },
     "devDependencies": {
         "@types/node": "^24.7.0",
+        "dotenv-cli": "^10.0.0",
         "eslint": "^9.37.0",
         "globals": "^16.4.0",
         "husky": "^9.1.7",
