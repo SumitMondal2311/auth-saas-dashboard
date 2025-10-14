@@ -8,7 +8,7 @@ await (async () => {
         await connectDB();
         const app = createServer();
         const server = app.listen(env.PORT, () => {
-            logger.info(`🚀 Server is ready on port: ${env.PORT}`);
+            logger.info(`✅ Server is ready on port: ${env.PORT}`);
         });
 
         let shuttingDown = false;
@@ -41,6 +41,6 @@ await (async () => {
             process.exit(1);
         });
     } catch (_) {
-        throw new Error("❌ Failed to initialize the http server");
+        throw new Error("Failed to initialize the http server");
     }
 })();

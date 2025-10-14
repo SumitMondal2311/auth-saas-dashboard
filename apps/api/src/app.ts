@@ -4,6 +4,7 @@ import express, { Express, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { APIError } from "./configs/api-error.js";
 import { logger } from "./configs/logger.js";
+import { router } from "./routes/our-user/index.js";
 
 export const createServer = () => {
     const app: Express = express();
@@ -20,6 +21,7 @@ export const createServer = () => {
     app.use(cookieParser());
 
     // api routes
+    app.use("/api/v1", router);
 
     app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
         if (err instanceof APIError) {

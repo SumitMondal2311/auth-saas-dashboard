@@ -10,18 +10,16 @@
             "env": ["PORT", "DB_URL"],
             "outputs": ["dist/**"]
         },
-        "@shared/db#build": {
+        "@repo/db#build": {
             "dependsOn": ["^build"],
             "env": ["DB_MAX_RETRIES"],
             "outputs": ["dist/**"]
         },
         "check-types": {
-            "dependsOn": ["^check-types"],
-            "cache": false
+            "dependsOn": ["^check-types"]
         },
         "lint": {
-            "dependsOn": ["^lint"],
-            "cache": false
+            "dependsOn": ["^lint"]
         },
         "dev": {
             "dependsOn": ["^dev"],

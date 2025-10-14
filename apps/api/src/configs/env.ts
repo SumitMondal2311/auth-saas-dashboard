@@ -18,8 +18,7 @@ config({
 
 export const env = z
     .object({
-        DB_MAX_RETRIES: z.string().transform(Number),
         PORT: z.string().transform(Number),
-        DB_URL: z.string(),
+        DATABASE_URL: z.string(),
     })
     .parse(process.env);

@@ -1,9 +1,0 @@
-{
-    "extends": "@shared/tsconfig",
-    "compilerOptions": {
-        "rootDir": "src",
-        "outDir": "dist",
-        "types": ["node", "@prisma/client"]
-    },
-    "include": ["src"]
-}

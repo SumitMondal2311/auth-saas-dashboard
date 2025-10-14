@@ -1,0 +1,126 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model SignUp {
+    id           String   @id @default(uuid())
+    emailAddress String
+    passwordHash String
+    verification Json
+    createdAt    DateTime @default(now())
+    expiresAt    DateTime
+
+    @@map("sign_ups")
+}
+
+enum VerificationOtpStrategy {
+    RESET_PASSWORD
+    SIGN_IN
+    VERIFY_EMAIL_ADDRESS
+}
+
+model OurUser {
+    id                String    @id @default(uuid())
+    firstName         String?
+    lastName          String?
+    avatarUrl         String
+    mfaEnabled        Boolean   @default(false)
+    backupCodeEnabled Boolean   @default(false)
+    locked            Boolean   @default(false)
+    banned            Boolean   @default(false)
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+    lockExpiresAt     DateTime?
+    lastSignInAt      DateTime?
+
+    email        OurUserEmail?
+    password     OurUserPassword?
+    sessions     OurUserSession[]
+    totp         OurUserTotp?
+    backupCodes  OurUserBackupCode[]
+    applications Application[]
+
+    @@map("our_users")
+}
+
+model OurUserEmail {
+    userId    String   @unique
+    verified  Boolean  @default(false)
+    address   String   @unique
+    createdAt DateTime @default(now())
+
+    user OurUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("our_user_email")
+}
+
+model OurUserPassword {
+    userId        String    @unique
+    hash          String
+    createdAt     DateTime  @default(now())
+    lastChangedAt DateTime?
+
+    user OurUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("our_user_password")
+}
+
+model OurUserSession {
+    id             String    @id @default(uuid())
+    userAgent      String    @default("unknown") @db.Text
+    ipAddress      String    @default("unknown")
+    userId         String
+    createdAt      DateTime  @default(now())
+    expiresAt      DateTime
+    lastVerifiedAt DateTime?
+
+    user OurUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("our_user_sessions")
+}
+
+model OurUserTotp {
+    userId     String    @unique
+    verified   Boolean   @default(false)
+    secret     String
+    createdAt  DateTime  @default(now())
+    lastUsedAt DateTime?
+
+    user OurUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("our_user_totp")
+}
+
+model OurUserBackupCode {
+    id        String   @id @default(uuid())
+    userId    String
+    hash      String
+    createdAt DateTime @default(now())
+    used      Boolean  @default(false)
+
+    user OurUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, hash])
+    @@map("our_user_backup_codes")
+}
+
+model Application {
+    id        String   @id @default(uuid())
+    ownerId   String
+    name      String
+    publicKey String   @unique
+    secretKey String   @unique
+    slug      String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user OurUser @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+    @@map("applications")
+}

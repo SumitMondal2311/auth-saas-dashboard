@@ -4,15 +4,15 @@
     "scripts": {
         "build": "turbo build",
         "build:apps": "turbo build -F api",
-        "build:db": "turbo build -F @shared/db",
+        "build:pkgs": "turbo build -F @repo/**",
         "check-types": "turbo check-types",
         "clean": "rimraf **/*/dist",
-        "db:deploy": "dotenv -e apps/api/.env.production -- pnpm -F @shared/db db:deploy  ",
-        "db:generate": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:generate ",
-        "db:migrate": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:migrate  ",
-        "db:push": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:push  ",
-        "db:reset": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:reset  ",
-        "db:studio": "dotenv -e apps/api/.env.development -- pnpm -F @shared/db db:studio ",
+        "db:deploy": "dotenv -e apps/api/.env.production -- pnpm -F @repo/db db:deploy",
+        "db:generate": "dotenv -e apps/api/.env.development -- pnpm -F @repo/db db:generate",
+        "db:migrate": "dotenv -e apps/api/.env.development -- pnpm -F @repo/db db:migrate",
+        "db:push": "dotenv -e apps/api/.env.development -- pnpm -F @repo/db db:push",
+        "db:reset": "dotenv -e apps/api/.env.development -- pnpm -F @repo/db db:reset",
+        "db:studio": "dotenv -e apps/api/.env.development -- pnpm -F @repo/db db:studio",
         "dev": "NODE_ENV=development turbo dev",
         "docker:down": "docker-compose down",
         "docker:up": "docker-compose up",
@@ -31,12 +31,12 @@
         "zod": "^4.1.12"
     },
     "devDependencies": {
-        "@types/node": "^24.7.0",
+        "@types/node": "^24.7.2",
         "dotenv-cli": "^10.0.0",
         "eslint": "^9.37.0",
         "globals": "^16.4.0",
         "husky": "^9.1.7",
-        "lint-staged": "^16.2.3",
+        "lint-staged": "^16.2.4",
         "prettier": "^3.6.2",
         "prettier-plugin-packagejson": "^2.5.19",
         "prettier-plugin-tailwindcss": "^0.6.14",
@@ -44,7 +44,7 @@
         "turbo": "^2.5.8",
         "typescript": "^5.9.3"
     },
-    "packageManager": "pnpm@10.18.1",
+    "packageManager": "pnpm@10.19.0",
     "engines": {
         "node": ">=18"
     }

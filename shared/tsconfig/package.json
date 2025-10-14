@@ -1,8 +1,0 @@
-{
-    "name": "@shared/tsconfig",
-    "private": true,
-    "type": "module",
-    "exports": {
-        ".": "./index.json"
-    }
-}
