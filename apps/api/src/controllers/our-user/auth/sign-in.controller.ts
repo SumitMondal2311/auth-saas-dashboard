@@ -2,11 +2,12 @@ import { AuthSchema } from "@repo/types";
 import { authSchema } from "@repo/validation";
 import { NextFunction, Request, Response } from "express";
 import { APIError } from "../../../configs/api-error.js";
-import { IS_PROD, SIGN_UP_EXPIRY } from "../../../configs/constant.js";
+import { IS_PROD, SESSION_EXPIRY } from "../../../configs/constant.js";
 import { handleAsync } from "../../../helpers/handle-async.js";
-import { signUpService } from "../../../services/our-user/auth/sign-up.service.js";
+import { normalizedIP } from "../../../helpers/normalized-ip.js";
+import { signInService } from "../../../services/our-user/auth/sign-in.service.js";
 
-export const signUpController = handleAsync(
+export const signInController = handleAsync(
     async (
         req: Request & {
             body: AuthSchema;
@@ -22,14 +23,20 @@ export const signUpController = handleAsync(
             });
         }
 
-        const { signUp } = await signUpService(data);
+        const { emailAddress, password } = data;
+        const { sessionId } = await signInService({
+            userAgent: req.headers["user-agent"] || "unknown",
+            ipAddress: normalizedIP(req.ip || "unknown"),
+            password,
+            emailAddress,
+        });
 
         res.status(201)
-            .cookie("__sign_up", signUp, {
+            .cookie("__session_id", sessionId, {
                 secure: IS_PROD,
                 httpOnly: true,
                 sameSite: "lax",
-                maxAge: SIGN_UP_EXPIRY * 1000,
+                maxAge: SESSION_EXPIRY * 1000,
             })
             .json({ success: true });
     }

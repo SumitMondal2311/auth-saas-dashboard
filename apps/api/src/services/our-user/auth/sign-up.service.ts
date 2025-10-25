@@ -1,10 +1,11 @@
 import { prisma } from "@repo/db";
 import { hash } from "argon2";
 import chalk from "chalk";
-import { IS_PROD, VERIFICATION_OTP_EXPIRY } from "../../../configs/constant.js";
+import { IS_PROD, SIGN_UP_EXPIRY } from "../../../configs/constant.js";
 import { logger } from "../../../configs/logger.js";
 import { addSecondsToNow } from "../../../helpers/add-seconds-to-now.js";
 import { generateOtp } from "../../../helpers/generate-otp.js";
+import { SignUpCookie } from "../../../types/sign-up-cookie.js";
 import { VerificationOtp } from "../../../types/sign-up-verification.js";
 
 export const signUpService = async ({
@@ -14,21 +15,21 @@ export const signUpService = async ({
     password: string;
     emailAddress: string;
 }): Promise<{
-    signUpId: string;
+    signUp: SignUpCookie;
 }> => {
     const emailRecord = await prisma.ourUserEmail.findFirst({
         where: {
             address: emailAddress,
             verified: true,
         },
-        select: { userId: true },
     });
 
     if (emailRecord) {
-        await hash("a1b2c3"); // prevent timing attacks
-        const signUp = await prisma.signUp.create({
+        await hash("a1b2c3"); // for preventing timing attacks
+        // for preventing user enumeration
+        const signUp = await prisma.ourUserSignUp.create({
             data: {
-                expiresAt: addSecondsToNow(VERIFICATION_OTP_EXPIRY),
+                expiresAt: addSecondsToNow(SIGN_UP_EXPIRY),
                 emailAddress,
                 passwordHash: await hash(password),
                 verification: {
@@ -37,16 +38,19 @@ export const signUpService = async ({
                     object: "verification_otp",
                 } as VerificationOtp,
             },
-            select: { id: true },
+            select: {
+                id: true,
+                expiresAt: true,
+            },
         });
 
-        return { signUpId: signUp.id };
+        return { signUp };
     }
 
     const { rawOtp, hashedOtp } = generateOtp(6);
-    const signUp = await prisma.signUp.create({
+    const signUp = await prisma.ourUserSignUp.create({
         data: {
-            expiresAt: addSecondsToNow(VERIFICATION_OTP_EXPIRY),
+            expiresAt: addSecondsToNow(SIGN_UP_EXPIRY),
             emailAddress,
             passwordHash: await hash(password),
             verification: {
@@ -55,12 +59,15 @@ export const signUpService = async ({
                 object: "verification_otp",
             } as VerificationOtp,
         },
-        select: { id: true },
+        select: {
+            id: true,
+            expiresAt: true,
+        },
     });
 
     if (!IS_PROD) {
         logger.info(chalk.bgGreen(rawOtp));
     }
 
-    return { signUpId: signUp.id };
+    return { signUp };
 };

@@ -15,7 +15,7 @@ export const verificationCodeSchema = z.object({
     code: z.string({ error: "Code required" }).nonempty("Enter code").length(6, "Incorrect code"),
 });
 
-export const signUpSchema = z.object({
+export const authSchema = z.object({
     ...passwordSchema.shape,
     ...emailAddressSchema.shape,
 });

@@ -18,7 +18,7 @@ export const verifyEmailAddressService = async ({
 }): Promise<{
     sessionId: string;
 }> => {
-    const signUpRecord = await prisma.signUp.findFirst({
+    const signUpRecord = await prisma.ourUserSignUp.findFirst({
         where: { id: signUpId },
         select: {
             emailAddress: true,
@@ -35,16 +35,8 @@ export const verifyEmailAddressService = async ({
         });
     }
 
-    const { verification, expiresAt, emailAddress, passwordHash } = signUpRecord;
-    const { codeHash, object, attempts } = verification as VerificationOtp;
-
-    if (new Date() >= expiresAt) {
-        await prisma.signUp.delete({ where: { id: signUpId } });
-        throw new APIError(410, {
-            message: "This sign up attempt has expired. Please go back and try again.",
-            code: "sign_up_expired",
-        });
-    }
+    const { verification, emailAddress, passwordHash } = signUpRecord;
+    const { codeHash, attempts, ...rest } = verification as VerificationOtp;
 
     if (attempts >= 5) {
         throw new APIError(403, {
@@ -53,13 +45,13 @@ export const verifyEmailAddressService = async ({
         });
     }
 
-    await prisma.signUp.update({
+    await prisma.ourUserSignUp.update({
         where: { id: signUpId },
         data: {
             verification: {
-                codeHash,
-                object,
                 attempts: attempts + 1,
+                ...rest,
+                codeHash,
             } as VerificationOtp,
         },
     });
@@ -71,33 +63,34 @@ export const verifyEmailAddressService = async ({
         });
     }
 
-    const user = await prisma.ourUser.create({
-        data: {
-            avatarUrl: "avatarUrl",
-            email: {
-                create: {
-                    address: emailAddress,
-                    verified: true,
-                },
-            },
-            password: { create: { hash: passwordHash } },
-        },
-        select: { id: true },
-    });
-
-    await prisma.signUp.deleteMany({
+    await prisma.ourUserSignUp.deleteMany({
         where: { emailAddress },
     });
 
-    const session = await prisma.ourUserSession.create({
-        data: {
-            ipAddress: ipAddress,
-            userAgent: userAgent,
-            expiresAt: addSecondsToNow(SESSION_EXPIRY),
-            user: { connect: { id: user.id } },
-        },
-        select: { id: true },
+    const { id: sessionId } = await prisma.$transaction(async (tx) => {
+        const user = await tx.ourUser.create({
+            data: {
+                avatarUrl: "avatarUrl",
+                email: {
+                    create: {
+                        address: emailAddress,
+                        verified: true,
+                    },
+                },
+                password: { create: { hash: passwordHash } },
+            },
+            select: { id: true },
+        });
+        return tx.ourUserSession.create({
+            data: {
+                ipAddress,
+                userAgent,
+                expiresAt: addSecondsToNow(SESSION_EXPIRY),
+                user: { connect: { id: user.id } },
+            },
+            select: { id: true },
+        });
     });
 
-    return { sessionId: session.id };
+    return { sessionId };
 };

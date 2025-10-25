@@ -8,7 +8,7 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model SignUp {
+model OurUserSignUp {
     id           String   @id @default(uuid())
     emailAddress String
     passwordHash String
@@ -16,13 +16,23 @@ model SignUp {
     createdAt    DateTime @default(now())
     expiresAt    DateTime
 
-    @@map("sign_ups")
+    @@map("our_user_sign_ups")
 }
 
-enum VerificationOtpStrategy {
+enum SignInStrategy {
+    MAGIC_LINK
     RESET_PASSWORD
-    SIGN_IN
-    VERIFY_EMAIL_ADDRESS
+}
+
+model OurUserSignIn {
+    id           String         @id @default(uuid())
+    emailAddress String
+    verification Json
+    strategy     SignInStrategy
+    createdAt    DateTime       @default(now())
+    expiresAt    DateTime
+
+    @@map("our_user_sign_ins")
 }
 
 model OurUser {
@@ -77,6 +87,7 @@ model OurUserSession {
     ipAddress      String    @default("unknown")
     userId         String
     createdAt      DateTime  @default(now())
+    lastActiveAt   DateTime  @default(now())
     expiresAt      DateTime
     lastVerifiedAt DateTime?
 

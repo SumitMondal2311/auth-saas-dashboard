@@ -1,10 +1,16 @@
 export type VerificationOtp = {
-    attempts: number;
-    codeHash: string;
     object: "verification_otp";
+    codeHash: string;
+    attempts: number;
+};
+
+export type VerificationMagicLink = {
+    object: "verification_magic_link";
+    token: string;
+    attempts: number;
 };
 
 export type VerificationPassword = {
-    attempts: number;
     object: "verification_password";
+    attempts: number;
 };
