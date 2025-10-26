@@ -1,12 +1,11 @@
 import { prisma } from "@repo/db";
 import { verify } from "argon2";
 import { APIError } from "../../../configs/api-error.js";
-import { SESSION_EXPIRY } from "../../../configs/constant.js";
+import { MAX_EMAIL_CODE_ATTEMPTS, SESSION_EXPIRY } from "../../../configs/constant.js";
 import { addSecondsToNow } from "../../../helpers/add-seconds-to-now.js";
-import { VerificationOtp } from "../../../types/sign-up-verification.js";
 
-export const verifyEmailAddressService = async ({
-    signUpId,
+export const signUpVerificationService = async ({
+    signUpToken,
     code,
     ipAddress,
     userAgent,
@@ -14,17 +13,18 @@ export const verifyEmailAddressService = async ({
     ipAddress: string;
     userAgent: string;
     code: string;
-    signUpId: string;
+    signUpToken: string;
 }): Promise<{
     sessionId: string;
 }> => {
-    const signUpRecord = await prisma.ourUserSignUp.findFirst({
-        where: { id: signUpId },
+    const signUpRecord = await prisma.ourUserSignUp.findUnique({
+        where: { token: signUpToken },
         select: {
             emailAddress: true,
             passwordHash: true,
+            attempts: true,
+            verificationCodeHash: true,
             expiresAt: true,
-            verification: true,
         },
     });
 
@@ -35,31 +35,41 @@ export const verifyEmailAddressService = async ({
         });
     }
 
-    const { verification, emailAddress, passwordHash } = signUpRecord;
-    const { codeHash, attempts, ...rest } = verification as VerificationOtp;
+    const deleteSignUpRecord = async () => {
+        await prisma.ourUserSignUp.deleteMany({
+            where: { token: signUpToken },
+        });
+    };
 
-    if (attempts >= 5) {
+    if (new Date() >= signUpRecord.expiresAt) {
+        await deleteSignUpRecord();
+        throw new APIError(410, {
+            message: "This sign up attempt has expired. Please go back and try again.",
+            code: "attempt_expired",
+        });
+    }
+
+    const { emailAddress, passwordHash, verificationCodeHash } = signUpRecord;
+
+    if (signUpRecord.attempts >= MAX_EMAIL_CODE_ATTEMPTS) {
+        await deleteSignUpRecord();
         throw new APIError(403, {
             message: "Too many failed attempts. Please go back and try again.",
-            code: "sign_up_failed",
+            code: "attempt_failed",
         });
     }
 
     await prisma.ourUserSignUp.update({
-        where: { id: signUpId },
+        where: { token: signUpToken },
         data: {
-            verification: {
-                attempts: attempts + 1,
-                ...rest,
-                codeHash,
-            } as VerificationOtp,
+            attempts: { increment: 1 },
         },
     });
 
-    if ((await verify(codeHash, code)) === false) {
+    if ((await verify(verificationCodeHash, code)) === false) {
         throw new APIError(422, {
-            message: "The code you have entered is incorrect",
-            code: "incorrect_code",
+            message: "Entered code is incorrect",
+            code: "invalid_code",
         });
     }
 
@@ -72,12 +82,11 @@ export const verifyEmailAddressService = async ({
             data: {
                 avatarUrl: "avatarUrl",
                 email: {
-                    create: {
-                        address: emailAddress,
-                        verified: true,
-                    },
+                    create: { address: emailAddress, verified: true },
                 },
-                password: { create: { hash: passwordHash } },
+                password: {
+                    create: { hash: passwordHash },
+                },
             },
             select: { id: true },
         });
@@ -86,7 +95,9 @@ export const verifyEmailAddressService = async ({
                 ipAddress,
                 userAgent,
                 expiresAt: addSecondsToNow(SESSION_EXPIRY),
-                user: { connect: { id: user.id } },
+                user: {
+                    connect: { id: user.id },
+                },
             },
             select: { id: true },
         });

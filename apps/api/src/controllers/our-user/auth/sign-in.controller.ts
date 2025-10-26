@@ -1,6 +1,6 @@
 import { AuthSchema } from "@repo/types";
 import { authSchema } from "@repo/validation";
-import { NextFunction, Request, Response } from "express";
+import { Request } from "express";
 import { APIError } from "../../../configs/api-error.js";
 import { IS_PROD, SESSION_EXPIRY } from "../../../configs/constant.js";
 import { handleAsync } from "../../../helpers/handle-async.js";
@@ -12,8 +12,7 @@ export const signInController = handleAsync(
         req: Request & {
             body: AuthSchema;
         },
-        res: Response,
-        _next: NextFunction
+        res
     ) => {
         const { success, error, data } = authSchema.safeParse(req.body);
         if (!success) {

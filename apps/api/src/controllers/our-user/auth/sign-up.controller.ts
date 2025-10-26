@@ -1,8 +1,7 @@
 import { AuthSchema } from "@repo/types";
 import { authSchema } from "@repo/validation";
-import { NextFunction, Request, Response } from "express";
+import { Request } from "express";
 import { APIError } from "../../../configs/api-error.js";
-import { IS_PROD, SIGN_UP_EXPIRY } from "../../../configs/constant.js";
 import { handleAsync } from "../../../helpers/handle-async.js";
 import { signUpService } from "../../../services/our-user/auth/sign-up.service.js";
 
@@ -11,8 +10,7 @@ export const signUpController = handleAsync(
         req: Request & {
             body: AuthSchema;
         },
-        res: Response,
-        _next: NextFunction
+        res
     ) => {
         const { success, error, data } = authSchema.safeParse(req.body);
         if (!success) {
@@ -22,15 +20,8 @@ export const signUpController = handleAsync(
             });
         }
 
-        const { signUp } = await signUpService(data);
+        const { token } = await signUpService(data);
 
-        res.status(201)
-            .cookie("__sign_up", signUp, {
-                secure: IS_PROD,
-                httpOnly: true,
-                sameSite: "lax",
-                maxAge: SIGN_UP_EXPIRY * 1000,
-            })
-            .json({ success: true });
+        res.status(201).json({ token });
     }
 );

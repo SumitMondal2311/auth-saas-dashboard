@@ -18,7 +18,8 @@ config({
 
 export const env = z
     .object({
-        PORT: z.string().transform(Number),
         DATABASE_URL: z.string(),
+        PORT: z.string().transform(Number),
+        REDIS_URL: z.string(),
     })
     .parse(process.env);

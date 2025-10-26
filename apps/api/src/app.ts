@@ -12,7 +12,7 @@ export const createServer = () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use((req: Request, _res: Response, next: NextFunction) => {
-        logger.info(`[${req.method}] ${req.path}`);
+        logger.info(`➡️ [${req.method}] ${req.path}`);
         next();
     });
 
@@ -25,6 +25,7 @@ export const createServer = () => {
 
     app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
         if (err instanceof APIError) {
+            logger.error(err.message);
             return res.status(err.statusCode).json({
                 ...err.toJSON(),
             });

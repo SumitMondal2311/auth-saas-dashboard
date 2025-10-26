@@ -8,31 +8,44 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model OurUserSignUp {
-    id           String   @id @default(uuid())
+model OurUserMagicLink {
     emailAddress String
-    passwordHash String
-    verification Json
+    token        String   @unique
     createdAt    DateTime @default(now())
     expiresAt    DateTime
 
+    @@id([token])
+    @@map("our_user_magic_links")
+}
+
+model OurUserSignUp {
+    attempts             Int      @default(0)
+    emailAddress         String
+    passwordHash         String
+    token                String   @unique
+    verificationCodeHash String
+    createdAt            DateTime @default(now())
+    expiresAt            DateTime
+
+    @@id([token])
     @@map("our_user_sign_ups")
 }
 
-enum SignInStrategy {
-    MAGIC_LINK
-    RESET_PASSWORD
+enum ResetPasswordStage {
+    FINAL
+    VERIFICATION
 }
 
-model OurUserSignIn {
-    id           String         @id @default(uuid())
-    emailAddress String
-    verification Json
-    strategy     SignInStrategy
-    createdAt    DateTime       @default(now())
-    expiresAt    DateTime
+model OurUserResetPassword {
+    emailAddress         String
+    verificationCodeHash String
+    stage                ResetPasswordStage @default(VERIFICATION)
+    token                String             @unique
+    createdAt            DateTime           @default(now())
+    expiresAt            DateTime
 
-    @@map("our_user_sign_ins")
+    @@id([token])
+    @@map("our_user_reset_passwords")
 }
 
 model OurUser {
@@ -122,14 +135,14 @@ model OurUserBackupCode {
 }
 
 model Application {
-    id        String   @id @default(uuid())
-    ownerId   String
-    name      String
-    publicKey String   @unique
-    secretKey String   @unique
-    slug      String   @unique
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id            String   @id @default(uuid())
+    ownerId       String
+    name          String
+    publicKey     String   @unique
+    secretKeyHash String   @unique
+    slug          String   @unique
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
 
     user OurUser @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 

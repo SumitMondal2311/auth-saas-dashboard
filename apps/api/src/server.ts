@@ -18,12 +18,12 @@ await (async () => {
                 if (shuttingDown) return;
                 shuttingDown = true;
 
-                console.log(`Received ${signal}, shutting down server...`);
+                console.info(`❗️ Received ${signal}, shutting down server...`);
 
                 server.close(
                     () =>
                         void (async () => {
-                            console.log("Server closed gracefully");
+                            console.info("✅ Server closed gracefully");
                             await disconnectDB();
                             process.exit(0);
                         })()
@@ -32,15 +32,16 @@ await (async () => {
         );
 
         process.on("uncaughtException", (error: Error) => {
-            console.error(`Uncaught Exception ${error}`);
+            console.error(`❎ Uncaught Exception ${error}`);
             process.exit(1);
         });
 
         process.on("unhandledRejection", (error: Error) => {
-            console.error(`Unhandled Rejected ${error}`);
+            console.error(`❎ Unhandled Rejected ${error}`);
             process.exit(1);
         });
     } catch (_) {
-        throw new Error("Failed to initialize the http server");
+        console.error("❎ Failed to initialize http server");
+        process.exit(1);
     }
 })();

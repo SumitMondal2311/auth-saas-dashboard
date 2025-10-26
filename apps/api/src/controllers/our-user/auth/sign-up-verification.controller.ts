@@ -1,35 +1,20 @@
+import { VerificationCodeSchema } from "@repo/types";
 import { verificationCodeSchema } from "@repo/validation";
-import { NextFunction, Request, Response } from "express";
+import { Request } from "express";
 import { APIError } from "../../../configs/api-error.js";
 import { IS_PROD, SESSION_EXPIRY } from "../../../configs/constant.js";
 import { handleAsync } from "../../../helpers/handle-async.js";
 import { normalizedIP } from "../../../helpers/normalized-ip.js";
-import { verifyEmailAddressService } from "../../../services/our-user/auth/verify-email-address.service.js";
-import { SignUpCookie } from "../../../types/sign-up-cookie.js";
+import { signUpVerificationService } from "../../../services/our-user/auth/sign-up-verification.service.js";
 
-export const verifyEmailAddressController = handleAsync(
+export const signUpVerificationController = handleAsync(
     async (
         req: Request & {
-            cookies: { __sign_up?: SignUpCookie };
+            body: VerificationCodeSchema;
+            params: { token: string };
         },
-        res: Response,
-        _next: NextFunction
+        res
     ) => {
-        const { __sign_up } = req.cookies;
-        if (!__sign_up) {
-            throw new APIError(400, {
-                message: "Unprocessable action",
-                code: "invalid_action",
-            });
-        }
-
-        if (new Date() >= __sign_up.expiresAt) {
-            throw new APIError(410, {
-                message: "This sign up attempt has expired. Please go back and try again.",
-                code: "sign_up_expired",
-            });
-        }
-
         const { success, error, data } = verificationCodeSchema.safeParse(req.body);
         if (!success) {
             throw new APIError(400, {
@@ -38,16 +23,14 @@ export const verifyEmailAddressController = handleAsync(
             });
         }
 
-        const { code } = data;
-        const { sessionId } = await verifyEmailAddressService({
+        const { sessionId } = await signUpVerificationService({
             ipAddress: normalizedIP(req.ip || "unknown"),
             userAgent: req.headers["user-agent"] || "unknown",
-            code,
-            signUpId: __sign_up.id,
+            ...data,
+            signUpToken: req.params.token,
         });
 
         res.status(200)
-            .clearCookie("__sign_up")
             .cookie("__session_id", sessionId, {
                 secure: IS_PROD,
                 httpOnly: true,

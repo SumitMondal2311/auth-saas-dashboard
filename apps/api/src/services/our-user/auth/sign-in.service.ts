@@ -1,8 +1,14 @@
 import { prisma } from "@repo/db";
 import { hash, verify } from "argon2";
 import { APIError } from "../../../configs/api-error.js";
-import { MAX_ACTIVE_SESSIONS, SESSION_EXPIRY } from "../../../configs/constant.js";
+import {
+    MAX_ACTIVE_SESSIONS,
+    SESSION_CACHE_EXPIRY,
+    SESSION_EXPIRY,
+} from "../../../configs/constant.js";
 import { addSecondsToNow } from "../../../helpers/add-seconds-to-now.js";
+import { redis } from "../../../lib/redis.js";
+import { SessionCache } from "../../../types/session-cache.js";
 
 export const signInService = async ({
     emailAddress,
@@ -18,11 +24,12 @@ export const signInService = async ({
     sessionId: string;
 }> => {
     const emailRecord = await prisma.ourUserEmail.findFirst({
-        where: {
-            address: emailAddress,
-            verified: true,
+        where: { address: emailAddress, verified: true },
+        select: {
+            user: {
+                select: { id: true, locked: true, banned: true },
+            },
         },
-        select: { userId: true },
     });
 
     const dummyPasswordHash = await hash("dummy-password");
@@ -34,14 +41,13 @@ export const signInService = async ({
         });
     }
 
-    const { userId } = emailRecord;
+    const { user } = emailRecord;
     const passwordRecord = await prisma.ourUserPassword.findUnique({
-        where: { userId },
+        where: { userId: user.id },
         select: { hash: true },
     });
 
     if (!passwordRecord) {
-        // for preventing user enumeration
         throw new APIError(422, {
             message: "Incorrect email address or password",
             code: "invalid_credential",
@@ -55,11 +61,19 @@ export const signInService = async ({
         });
     }
 
+    if (user.locked || user.banned) {
+        // this message is intentional to prevent user enumeration
+        throw new APIError(422, {
+            message: "Incorrect email address or password",
+            code: "invalid_credential",
+        });
+    }
+
     // LRU based session deletion for reaching max limit
     const sessionRecords = await prisma.ourUserSession.findMany({
         where: {
             expiresAt: { gt: new Date() },
-            userId,
+            userId: user.id,
         },
         orderBy: { lastActiveAt: "asc" },
         select: { id: true },
@@ -71,15 +85,40 @@ export const signInService = async ({
         });
     }
 
-    const session = await prisma.ourUserSession.create({
-        data: {
-            ipAddress,
-            userAgent,
-            expiresAt: addSecondsToNow(SESSION_EXPIRY),
-            user: { connect: { id: userId } },
-        },
-        select: { id: true },
+    const session = await prisma.$transaction(async (tx) => {
+        await tx.ourUser.update({
+            where: { id: user.id },
+            data: { lastSignInAt: new Date() },
+            select: { id: true },
+        });
+        return await tx.ourUserSession.create({
+            data: {
+                ipAddress,
+                userAgent,
+                expiresAt: addSecondsToNow(SESSION_EXPIRY),
+                user: { connect: { id: user.id } },
+            },
+            select: {
+                id: true,
+                expiresAt: true,
+                user: {
+                    select: {
+                        locked: true,
+                        banned: true,
+                        lockExpiresAt: true,
+                    },
+                },
+            },
+        });
     });
+
+    // caching session
+    await redis.set(
+        `__session_${session.id}`,
+        JSON.stringify(session as SessionCache),
+        "EX",
+        SESSION_CACHE_EXPIRY
+    );
 
     return { sessionId: session.id };
 };
