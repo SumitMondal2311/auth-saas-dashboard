@@ -114,7 +114,7 @@ export const signInService = async ({
 
     // caching session
     await redis.set(
-        `__session_${session.id}`,
+        `__session:${session.id}`,
         JSON.stringify(session as SessionCache),
         "EX",
         SESSION_CACHE_EXPIRY

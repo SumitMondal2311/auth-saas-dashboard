@@ -9,19 +9,18 @@ export const sessionsController = {
         async (
             req: Request & {
                 authContext: AuthContext;
-                params: { session_id: string };
+                params: { id: string };
             },
             res
         ) => {
-            const targetSessionId = req.params.session_id;
             const { session } = req.authContext;
 
             await sessionsService.delete({
                 userId: session.user.id,
-                sessionId: targetSessionId,
+                sessionId: req.params.id,
             });
 
-            if (session.id === targetSessionId) {
+            if (session.id === req.params.id) {
                 return res
                     .clearCookie("__session_id", {
                         secure: IS_PROD,
@@ -55,6 +54,37 @@ export const sessionsController = {
                     maxAge: 0,
                 })
                 .json({ success: true });
+        }
+    ),
+    get: handleAsync(
+        async (
+            req: Request & {
+                authContext: AuthContext;
+            },
+            res
+            // eslint-disable-next-line @typescript-eslint/require-await
+        ) => {
+            const {
+                session: { user: _, ...rest },
+            } = req.authContext;
+
+            res.json({ session: rest });
+        }
+    ),
+    getAllActive: handleAsync(
+        async (
+            req: Request & {
+                authContext: AuthContext;
+            },
+            res
+        ) => {
+            const {
+                session: { user },
+            } = req.authContext;
+
+            const { sessions } = await sessionsService.getAllActive(user.id);
+
+            res.json({ sessions });
         }
     ),
 };

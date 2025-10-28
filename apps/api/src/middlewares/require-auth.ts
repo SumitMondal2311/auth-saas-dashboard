@@ -25,7 +25,7 @@ export const requireAuthMiddleware = handleAsync(
             });
         }
 
-        const sessionCache = await redis.get(`__session_${__session_id}`);
+        const sessionCache = await redis.get(`__session:${__session_id}`);
         let session: SessionCache;
 
         const clearSessionCookie = () => {
@@ -64,7 +64,7 @@ export const requireAuthMiddleware = handleAsync(
         }
 
         const deleteSession = async () => {
-            await redis.del(`__session_${session.id}`);
+            await redis.del(`__session:${session.id}`);
             await prisma.ourUserSession.deleteMany({
                 where: { id: session.id },
             });
@@ -128,7 +128,7 @@ export const requireAuthMiddleware = handleAsync(
 
         // re-caching updated session
         await redis.set(
-            `__session_${session.id}`,
+            `__session:${session.id}`,
             JSON.stringify({
                 ...session,
                 expiresAt: updatedSession.expiresAt,

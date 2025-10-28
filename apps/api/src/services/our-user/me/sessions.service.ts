@@ -1,8 +1,20 @@
-import { prisma } from "@repo/db";
+import { OurUserSession, prisma } from "@repo/db";
 import { APIError } from "../../../configs/api-error.js";
 import { redis } from "../../../lib/redis.js";
 
 export const sessionsService = {
+    getAllActive: async (
+        userId: string
+    ): Promise<{
+        sessions: Pick<OurUserSession, "lastActiveAt" | "id" | "ipAddress" | "userAgent">[];
+    }> => {
+        const sessionRecords = await prisma.ourUserSession.findMany({
+            where: { expiresAt: { gt: new Date() }, userId },
+            select: { lastActiveAt: true, id: true, userAgent: true, ipAddress: true },
+        });
+
+        return { sessions: sessionRecords };
+    },
     delete: async ({ sessionId, userId }: { userId: string; sessionId: string }): Promise<void> => {
         const sessionRecord = await prisma.ourUserSession.findFirst({
             where: { userId, id: sessionId },
@@ -19,7 +31,7 @@ export const sessionsService = {
         await prisma.ourUserSession.deleteMany({
             where: { id: sessionId },
         });
-        await redis.del(`__session_${sessionId}`);
+        await redis.del(`__session:${sessionId}`);
     },
     deleteAll: async (userId: string): Promise<void> => {
         const sessionRecords = await prisma.ourUserSession.findMany({
@@ -32,7 +44,7 @@ export const sessionsService = {
         });
 
         for (const session of sessionRecords) {
-            await redis.del(`__session_${session.id}`);
+            await redis.del(`__session:${session.id}`);
         }
     },
 };
