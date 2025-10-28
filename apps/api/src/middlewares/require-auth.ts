@@ -108,6 +108,9 @@ export const requireAuthMiddleware = handleAsync(
             include: {
                 user: {
                     include: {
+                        applications: {
+                            select: { name: true, id: true, publicKey: true, updatedAt: true },
+                        },
                         backupCodes: {
                             select: { used: true },
                         },

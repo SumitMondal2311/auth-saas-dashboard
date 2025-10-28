@@ -137,14 +137,13 @@ model OurUserBackupCode {
 model Application {
     id            String   @id @default(uuid())
     ownerId       String
-    name          String
-    publicKey     String   @unique
     secretKeyHash String   @unique
-    slug          String   @unique
+    publicKey     String   @unique
+    name          String
     createdAt     DateTime @default(now())
     updatedAt     DateTime @updatedAt
 
-    user OurUser @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    owner OurUser @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
     @@map("applications")
 }

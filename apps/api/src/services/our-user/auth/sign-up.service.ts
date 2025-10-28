@@ -13,9 +13,7 @@ export const signUpService = async ({
 }: {
     password: string;
     emailAddress: string;
-}): Promise<{
-    token: string;
-}> => {
+}): Promise<{ token: string }> => {
     const emailRecord = await prisma.ourUserEmail.findFirst({
         where: { address: emailAddress, verified: true },
     });

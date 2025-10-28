@@ -1,5 +1,9 @@
 import z from "zod";
 
+export const applicationSchema = z.object({
+    name: z.string({ error: "Application name required" }).nonempty("Enter application name"),
+});
+
 export const emailAddressSchema = z.object({
     emailAddress: z.email("Invalid email address").nonempty("Enter email address"),
 });

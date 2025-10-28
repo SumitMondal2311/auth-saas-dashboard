@@ -5,6 +5,38 @@ import { sessionsService } from "../../../services/our-user/me/sessions.service.
 import { AuthContext } from "../../../types/auth-context.js";
 
 export const sessionsController = {
+    get: handleAsync(
+        async (
+            req: Request & {
+                authContext: AuthContext;
+                params: { id: string };
+            },
+            res
+            // eslint-disable-next-line @typescript-eslint/require-await
+        ) => {
+            const {
+                session: { user: _, ...rest },
+            } = req.authContext;
+
+            res.json({ session: rest });
+        }
+    ),
+    getAll: handleAsync(
+        async (
+            req: Request & {
+                authContext: AuthContext;
+            },
+            res
+        ) => {
+            const {
+                session: { user },
+            } = req.authContext;
+
+            const { sessions } = await sessionsService.getAll(user.id);
+
+            res.json({ sessions });
+        }
+    ),
     delete: handleAsync(
         async (
             req: Request & {
@@ -14,7 +46,6 @@ export const sessionsController = {
             res
         ) => {
             const { session } = req.authContext;
-
             await sessionsService.delete({
                 userId: session.user.id,
                 sessionId: req.params.id,
@@ -54,37 +85,6 @@ export const sessionsController = {
                     maxAge: 0,
                 })
                 .json({ success: true });
-        }
-    ),
-    get: handleAsync(
-        async (
-            req: Request & {
-                authContext: AuthContext;
-            },
-            res
-            // eslint-disable-next-line @typescript-eslint/require-await
-        ) => {
-            const {
-                session: { user: _, ...rest },
-            } = req.authContext;
-
-            res.json({ session: rest });
-        }
-    ),
-    getAllActive: handleAsync(
-        async (
-            req: Request & {
-                authContext: AuthContext;
-            },
-            res
-        ) => {
-            const {
-                session: { user },
-            } = req.authContext;
-
-            const { sessions } = await sessionsService.getAllActive(user.id);
-
-            res.json({ sessions });
         }
     ),
 };

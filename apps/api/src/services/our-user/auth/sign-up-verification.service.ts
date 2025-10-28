@@ -14,9 +14,7 @@ export const signUpVerificationService = async ({
     userAgent: string;
     code: string;
     signUpToken: string;
-}): Promise<{
-    sessionId: string;
-}> => {
+}): Promise<{ sessionId: string }> => {
     const signUpRecord = await prisma.ourUserSignUp.findUnique({
         where: { token: signUpToken },
         select: {

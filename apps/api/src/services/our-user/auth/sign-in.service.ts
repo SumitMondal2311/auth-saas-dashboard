@@ -20,9 +20,7 @@ export const signInService = async ({
     password: string;
     ipAddress: string;
     emailAddress: string;
-}): Promise<{
-    sessionId: string;
-}> => {
+}): Promise<{ sessionId: string }> => {
     const emailRecord = await prisma.ourUserEmail.findFirst({
         where: { address: emailAddress, verified: true },
         select: {

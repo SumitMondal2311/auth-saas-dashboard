@@ -30,13 +30,11 @@ export const signUpVerificationController = handleAsync(
             signUpToken: req.params.token,
         });
 
-        res.status(200)
-            .cookie("__session_id", sessionId, {
-                secure: IS_PROD,
-                httpOnly: true,
-                sameSite: "lax",
-                maxAge: SESSION_EXPIRY * 1000,
-            })
-            .json({ success: true });
+        res.cookie("__session_id", sessionId, {
+            secure: IS_PROD,
+            httpOnly: true,
+            sameSite: "lax",
+            maxAge: SESSION_EXPIRY * 1000,
+        }).json({ success: true });
     }
 );

@@ -22,12 +22,10 @@ export const signInController = handleAsync(
             });
         }
 
-        const { emailAddress, password } = data;
         const { sessionId } = await signInService({
+            ...data,
             userAgent: req.headers["user-agent"] || "unknown",
             ipAddress: normalizedIP(req.ip || "unknown"),
-            password,
-            emailAddress,
         });
 
         res.status(201)
